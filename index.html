@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Progress — Task Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14171c;
+    --surface: #1c2027;
+    --surface-raised: #232833;
+    --border: #2e3440;
+    --text: #e7e9ec;
+    --text-dim: #8b93a1;
+    --text-faint: #565f6e;
+    --accent: #5eead4;
+    --accent-dim: #2d5a52;
+    --amber: #f5a623;
+    --danger: #e5626b;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  body {
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-position: -1px -1px;
+    background-attachment: fixed;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+
+  .title-block h1 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+  }
+
+  .title-block .sub {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .ring-wrap {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+  }
+
+  .ring-wrap svg { transform: rotate(-90deg); }
+
+  .ring-bg { stroke: var(--border); }
+  .ring-fg {
+    stroke: var(--accent);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+  }
+
+  .ring-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* Date nav */
+  .date-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+  }
+
+  .date-nav button {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 6px;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .date-nav button:hover { background: var(--surface-raised); color: var(--text); }
+  .date-nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .date-nav .current-date {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+  }
+
+  .date-nav .today-pill {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 0.62rem;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    vertical-align: middle;
+  }
+
+  .jump-today {
+    font-family: var(--font-mono);
+    font-size: 0.7rem !important;
+    color: var(--text-faint) !important;
+  }
+
+  /* Progress bar */
+  .progress-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+    border-radius: 999px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* Add task */
+  .add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .add-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+  }
+
+  .add-row input::placeholder { color: var(--text-faint); }
+  .add-row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+
+  .add-row button {
+    background: var(--accent);
+    color: #0a1210;
+    border: none;
+    border-radius: 10px;
+    padding: 0 20px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .add-row button:hover { opacity: 0.88; }
+  .add-row button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+  .add-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Task list */
+  .task-list { list-style: none; margin: 0; padding: 0; }
+
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    border-radius: 8px;
+    padding: 13px 14px;
+    margin-bottom: 8px;
+    transition: border-left-color 0.2s, opacity 0.2s;
+  }
+
+  .task-item.done { border-left-color: var(--accent); }
+
+  .task-item .check {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border-radius: 5px;
+    border: 1.5px solid var(--text-faint);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bg);
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .task-item .check:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .task-item.done .check { background: var(--accent); border-color: var(--accent); }
+  .task-item .check svg { width: 12px; height: 12px; opacity: 0; }
+  .task-item.done .check svg { opacity: 1; }
+
+  .task-item .label {
+    flex: 1;
+    font-size: 0.92rem;
+    color: var(--text);
+    word-break: break-word;
+  }
+
+  .task-item.done .label { color: var(--text-faint); text-decoration: line-through; }
+
+  .task-item .del {
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px 6px;
+    border-radius: 6px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+  }
+
+  .task-item:hover .del,
+  .task-item .del:focus-visible { opacity: 1; }
+  .task-item .del:hover { color: var(--danger); background: rgba(229,98,107,0.1); }
+  .task-item .del:focus-visible { outline: 2px solid var(--danger); outline-offset: 1px; }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+  }
+
+  /* Footer stats */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .stat-card .num {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .stat-card.streak .num { color: var(--amber); }
+  .stat-card.done .num { color: var(--accent); }
+
+  .stat-card .lbl {
+    font-size: 0.66rem;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+  }
+
+  @media (max-width: 420px) {
+    .wrap { padding: 24px 14px 60px; }
+    .title-block h1 { font-size: 1.3rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title-block">
+      <h1>Daily Progress</h1>
+      <div class="sub">Task tracker · local storage</div>
+    </div>
+    <div class="ring-wrap">
+      <svg width="64" height="64" viewBox="0 0 64 64">
+        <circle class="ring-bg" cx="32" cy="32" r="27" fill="none" stroke-width="6"/>
+        <circle class="ring-fg" id="ring-fg" cx="32" cy="32" r="27" fill="none" stroke-width="6"
+                stroke-dasharray="169.6" stroke-dashoffset="169.6"/>
+      </svg>
+      <div class="ring-label" id="ring-label">0%</div>
+    </div>
+  </header>
+
+  <div class="date-nav">
+    <button id="prev-day" aria-label="Previous day">&#8592;</button>
+    <div class="current-date">
+      <span id="current-date-label">—</span><span class="today-pill" id="today-pill" hidden>Today</span>
+      <div><button class="jump-today" id="jump-today" hidden>Jump to today</button></div>
+    </div>
+    <button id="next-day" aria-label="Next day">&#8594;</button>
+  </div>
+
+  <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+
+  <div class="add-row">
+    <input type="text" id="task-input" placeholder="Add a task for this day…" maxlength="200" autocomplete="off">
+    <button id="add-btn">Add</button>
+  </div>
+
+  <ul class="task-list" id="task-list"></ul>
+  <div class="empty-state" id="empty-state" hidden>No tasks yet for this day. Add one above to get started.</div>
+
+  <div class="stats-row">
+    <div class="stat-card done">
+      <div class="num" id="stat-done">0</div>
+      <div class="lbl">Done today</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="stat-remaining">0</div>
+      <div class="lbl">Remaining</div>
+    </div>
+    <div class="stat-card streak">
+      <div class="num" id="stat-streak">0</div>
+      <div class="lbl">Day streak</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const DB_NAME = 'dailyTaskTrackerDB';
+  const DB_VERSION = 1;
+  const STORE = 'tasks';
+  let db = null;
+
+  const RING_CIRCUMFERENCE = 2 * Math.PI * 27;
+
+  const state = {
+    currentDate: toDateKey(new Date()),
+    tasksForDay: []
+  };
+
+  // ---------- IndexedDB setup ----------
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+
+      req.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains(STORE)) {
+          const store = database.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+          store.createIndex('by_date', 'date', { unique: false });
+        }
+      };
+
+      req.onsuccess = (e) => resolve(e.target.result);
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  function txStore(mode) {
+    return db.transaction(STORE, mode).objectStore(STORE);
+  }
+
+  function getTasksByDate(dateKey) {
+    return new Promise((resolve, reject) => {
+      const store = txStore('readonly');
+      const index = store.index('by_date');
+      const range = IDBKeyRange.only(dateKey);
+      const results = [];
+      const req = index.openCursor(range);
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          results.push(cursor.value);
+          cursor.continue();
+        } else {
+          results.sort((a, b) => a.createdAt - b.createdAt);
+          resolve(results);
+        }
+      };
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  function getAllTasks() {
+    return new Promise((resolve, reject) => {
+      const store = txStore('readonly');
+      const req = store.getAll();
+      req.onsuccess = (e) => resolve(e.target.result);
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  function addTask(text, dateKey) {
+    return new Promise((resolve, reject) => {
+      const store = txStore('readwrite');
+      const req = store.add({ text, date: dateKey, completed: false, createdAt: Date.now() });
+      req.onsuccess = (e) => resolve(e.target.result);
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  function updateTask(task) {
+    return new Promise((resolve, reject) => {
+      const store = txStore('readwrite');
+      const req = store.put(task);
+      req.onsuccess = () => resolve();
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  function deleteTask(id) {
+    return new Promise((resolve, reject) => {
+      const store = txStore('readwrite');
+      const req = store.delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  // ---------- Date helpers ----------
+
+  function toDateKey(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function dateKeyToDate(key) {
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function shiftDateKey(key, days) {
+    const d = dateKeyToDate(key);
+    d.setDate(d.getDate() + days);
+    return toDateKey(d);
+  }
+
+  function formatDisplayDate(key) {
+    const d = dateKeyToDate(key);
+    return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // ---------- Rendering ----------
+
+  function render() {
+    document.getElementById('current-date-label').textContent = formatDisplayDate(state.currentDate);
+    const isToday = state.currentDate === toDateKey(new Date());
+    document.getElementById('today-pill').hidden = !isToday;
+    document.getElementById('jump-today').hidden = isToday;
+
+    const list = document.getElementById('task-list');
+    const emptyState = document.getElementById('empty-state');
+    list.innerHTML = '';
+
+    if (state.tasksForDay.length === 0) {
+      emptyState.hidden = false;
+    } else {
+      emptyState.hidden = true;
+      state.tasksForDay.forEach((task) => list.appendChild(renderTaskItem(task)));
+    }
+
+    const total = state.tasksForDay.length;
+    const done = state.tasksForDay.filter(t => t.completed).length;
+    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('stat-done').textContent = done;
+    document.getElementById('stat-remaining').textContent = total - done;
+
+    const ringFg = document.getElementById('ring-fg');
+    const offset = RING_CIRCUMFERENCE - (pct / 100) * RING_CIRCUMFERENCE;
+    ringFg.style.strokeDashoffset = offset;
+    document.getElementById('ring-label').textContent = pct + '%';
+  }
+
+  function renderTaskItem(task) {
+    const li = document.createElement('li');
+    li.className = 'task-item' + (task.completed ? ' done' : '');
+
+    const check = document.createElement('button');
+    check.className = 'check';
+    check.setAttribute('aria-label', task.completed ? 'Mark as not done' : 'Mark as done');
+    check.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    check.addEventListener('click', () => toggleTask(task));
+
+    const label = document.createElement('span');
+    label.className = 'label';
+    label.textContent = task.text;
+
+    const del = document.createElement('button');
+    del.className = 'del';
+    del.setAttribute('aria-label', 'Delete task');
+    del.textContent = '✕';
+    del.addEventListener('click', () => removeTask(task.id));
+
+    li.appendChild(check);
+    li.appendChild(label);
+    li.appendChild(del);
+    return li;
+  }
+
+  // ---------- Actions ----------
+
+  async function loadDay(dateKey) {
+    state.currentDate = dateKey;
+    state.tasksForDay = await getTasksByDate(dateKey);
+    render();
+    await refreshStreak();
+  }
+
+  async function toggleTask(task) {
+    task.completed = !task.completed;
+    await updateTask(task);
+    await loadDay(state.currentDate);
+  }
+
+  async function removeTask(id) {
+    await deleteTask(id);
+    await loadDay(state.currentDate);
+  }
+
+  async function handleAdd() {
+    const input = document.getElementById('task-input');
+    const text = input.value.trim();
+    if (!text) return;
+    await addTask(text, state.currentDate);
+    input.value = '';
+    await loadDay(state.currentDate);
+    input.focus();
+  }
+
+  async function refreshStreak() {
+    const all = await getAllTasks();
+    const byDate = {};
+    all.forEach((t) => {
+      if (!byDate[t.date]) byDate[t.date] = [];
+      byDate[t.date].push(t);
+    });
+
+    let streak = 0;
+    let cursor = toDateKey(new Date());
+
+    // If today has no tasks yet, start counting from yesterday so an
+    // unstarted today doesn't zero out an existing streak.
+    if (!byDate[cursor] || byDate[cursor].length === 0) {
+      cursor = shiftDateKey(cursor, -1);
+    }
+
+    while (byDate[cursor] && byDate[cursor].length > 0) {
+      const dayTasks = byDate[cursor];
+      const allDone = dayTasks.every(t => t.completed);
+      if (!allDone) break;
+      streak++;
+      cursor = shiftDateKey(cursor, -1);
+    }
+
+    document.getElementById('stat-streak').textContent = streak;
+  }
+
+  // ---------- Init ----------
+
+  async function init() {
+    try {
+      db = await openDB();
+    } catch (err) {
+      document.getElementById('empty-state').hidden = false;
+      document.getElementById('empty-state').textContent = 'Could not open local storage in this browser.';
+      console.error('IndexedDB error:', err);
+      return;
+    }
+
+    document.getElementById('add-btn').addEventListener('click', handleAdd);
+    document.getElementById('task-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleAdd();
+    });
+    document.getElementById('prev-day').addEventListener('click', () => loadDay(shiftDateKey(state.currentDate, -1)));
+    document.getElementById('next-day').addEventListener('click', () => loadDay(shiftDateKey(state.currentDate, 1)));
+    document.getElementById('jump-today').addEventListener('click', () => loadDay(toDateKey(new Date())));
+
+    await loadDay(state.currentDate);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
